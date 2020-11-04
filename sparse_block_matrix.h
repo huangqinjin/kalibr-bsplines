@@ -24,10 +24,8 @@
 #include <iomanip>
 #include <Eigen/Core>
 
-#include "matrix_structure.h"
 #include "assert_macros.hpp"
 #include <boost/algorithm/minmax.hpp>
-#include "sparse_helper.h"
 
 namespace sparse_block_matrix {
   using namespace Eigen;
@@ -221,9 +219,6 @@ class SparseBlockMatrix {
   template<typename IntType>
   IntType fillCCS(double* Cx, bool upperTriangle = false) const;
 
-  //! exports the non zero blocks in the structure matrix ms
-  void fillBlockStructure(MatrixStructure& ms) const;
-
   //! the block matrices per block-column
   const std::vector<IntBlockMap>& blockCols() const { return _blockCols;}
   std::vector<IntBlockMap>& blockCols() { return _blockCols;}
@@ -235,12 +230,6 @@ class SparseBlockMatrix {
   //! indices of the column blocks
   const std::vector<int>& colBlockIndices() const { return _colBlockIndices;}
   std::vector<int>& colBlockIndices() { return _colBlockIndices;}
-
-  /**
-   * write the content of this matrix to a stream loadable by Octave
-   * @param upperTriangle does this matrix store only the upper triangular blocks
-   */
-  bool writeOctave(const char* filename, bool upperTriangle = true) const;
 
   //! Returns just a reference to *this (at the moment). But useful already to have more interface compatibility with Eigen dense matrices.
   inline SparseBlockMatrix & eval() { return *this; }
