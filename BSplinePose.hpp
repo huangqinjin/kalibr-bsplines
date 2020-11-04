@@ -77,7 +77,7 @@ namespace bsplines {
       
       Eigen::Vector3d angularVelocityAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const;
 
-      // Fabio (not used and not tested)
+      Eigen::Vector3d angularAcceleration(double tk) const;
       Eigen::Vector3d angularAccelerationBodyFrame(double tk) const;
       Eigen::Vector3d angularAccelerationAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const;
       Eigen::Vector3d angularAccelerationBodyFrameAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const;

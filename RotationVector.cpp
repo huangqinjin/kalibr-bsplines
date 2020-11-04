@@ -121,8 +121,41 @@ namespace sm { namespace kinematics {
             {
                 Eigen::Matrix<double,3,6> & J = *Jacobian; // = [ d(Jr(\theta)\dot{\theta})/d\theta  Jr(\theta) ]
                 J.rightCols<3>() = S;
-#if 0
+#if 1
+                double factor[4];
+                double pp = p.dot(pdot);
+                double p2 = p.squaredNorm();
+                if(p2 < 1e-14)
+                {
+                    double p4 = p2 * p2;
+                    // Series[(1 - Cos[x]) / x^2, {x, 0, 4}]
+                    factor[0] = 0.5 - p2 / 24 + p4 / 720;
+                    // Series[(x Sin[x] + 2 Cos[x] - 2) / x^4, {x, 0, 4}] 
+                    factor[1] = -1.0 / 12 + p2 / 180 - p4 / 6720;
+                    // Series[(x - Sin[x]) / x^3, {x, 0, 4}]
+                    factor[2] = 1.0 / 6 - p2 / 120 + p4 / 5040;
+                    // Series[(3 Sin[x] - x Cos[x] - 2 x) / (x^5), {x, 0, 4}]
+                    factor[3] = -1.0 / 60 + p2 / 1260 - p4 / 60480;
+                }
+                else
+                {
+                    double p1 = std::sqrt(p2);
+                    double p3 = p1 * p2;
+                    double p4 = p1 * p3;
+                    double p5 = p1 * p4;
+                    double cosp = std::cos(p1);
+                    double sinp = std::sin(p1);
 
+                    factor[0] = (1 - cosp) / p2;
+                    factor[1] = (p1 * sinp + 2 * cosp - 2) / p4;
+                    factor[2] = (p1 - sinp) / p3;
+                    factor[3] = (3 * sinp - p1 * cosp - 2 * p1) / p5;
+                }
+
+                J.leftCols<3>() = factor[0] * crossMx(pdot) + 
+                                  factor[1] * crossMx(pdot) * p * p.transpose() +
+                                  factor[2] * (pp * Eigen::Matrix3d::Identity() + p * pdot.transpose() - 2 * pdot * p.transpose()) +
+                                  factor[3] * (pp * p * p.transpose() - p2 * pdot * p.transpose());
 #else
                 // LAZY
                 // \todo...redo when there is time and not so lazy.

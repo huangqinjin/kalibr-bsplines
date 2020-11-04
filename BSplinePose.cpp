@@ -241,44 +241,18 @@ namespace bsplines {
     // \omega_w_{b,b} (angular velocity of the body frame as seen from the world frame, expressed in the body frame)
     Eigen::Vector3d BSplinePose::angularVelocityBodyFrameAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const
     {
-      Eigen::Vector3d omega;
-      Eigen::Vector3d p;
-      Eigen::Vector3d pdot;
-      Eigen::MatrixXd Jp;
-      Eigen::MatrixXd Jpdot;
-      p = evalDAndJacobian(tk,0,&Jp,NULL).tail<3>();
-      pdot = evalDAndJacobian(tk,1,&Jpdot,coefficientIndices).tail<3>();
-
       Eigen::MatrixXd Jr;
       Eigen::Matrix3d C_b_w = inverseOrientationAndJacobian(tk,&Jr,NULL);
       
-      // Jpdot = [    d\theta/dC    ]
-      //         [ d\dot{\theta}/dC ]
-      // Rearrange the spline jacobian matrices. Now Jpdot is the 
-      // jacobian of p wrt the spline coefficients stacked on top
-      // of the jacobian of pdot wrt the spline coefficients.
-      Jpdot.block(0,0,3,Jpdot.cols()) = Jp.block(3,0,3,Jp.cols());
-      
-      //std::cout << "Jpdot\n" << Jpdot << std::endl;
+      Eigen::Vector3d omega = angularVelocityAndJacobian(tk, J, coefficientIndices);
+      omega = C_b_w * omega;
 
-      Eigen::Matrix<double,3,6> Jo;
-      omega = -C_b_w * rotation_->angularVelocityAndJacobian(p,pdot,&Jo);
-      Jo = (-C_b_w * Jo).eval();
-      //std::cout << "Jo:\n" << Jo << std::endl;
-      // \omega = -R * Jr(\theta) * \dot{\theta}
-      // R, \theta, \dot{\theta} are independent, then 
-      //    d\omega/dC = d\omega/dR * dR/dC + d\omega/d\theta * d\theta/dC + d\omega/d\dot{\theta} * d\dot{\theta}/dC
-      // d\omega/dR = (\omega)^\wedge
-      //  d\omega/d\theta * d\theta/dC + d\omega/d\dot{\theta} * d\dot{\theta}/dC
-      // = -R * [d(Jr(\theta)\dot{\theta})/d\theta   Jr(\theta)] * [    d\theta/dC    ]
-      //                                                           [ d\dot{\theta}/dC ]
       if(J)
       {
-        *J = Jo * Jpdot + sm::kinematics::crossMx(omega) * Jr;
+        *J = C_b_w * (*J) + sm::kinematics::crossMx(omega) * Jr;
       }
 
       return omega;
-
     }
 
 
@@ -300,7 +274,12 @@ namespace bsplines {
       Jpdot.block(0,0,3,Jpdot.cols()) = Jp.block(3,0,3,Jp.cols());
       
       //std::cout << "Jpdot\n" << Jpdot << std::endl;
-
+      // \omega = -Jr(\theta) * \dot{\theta}
+      // \theta, \dot{\theta} are independent, then 
+      //    d\omega/dC = d\omega/d\theta * d\theta/dC + d\omega/d\dot{\theta} * d\dot{\theta}/dC
+      //  d\omega/d\theta * d\theta/dC + d\omega/d\dot{\theta} * d\dot{\theta}/dC
+      // = -R * [d(Jr(\theta)\dot{\theta})/d\theta   Jr(\theta)] * [    d\theta/dC    ]
+      //                                                           [ d\dot{\theta}/dC ]
       Eigen::Matrix<double,3,6> Jo;
       omega = -rotation_->angularVelocityAndJacobian(p,pdot,&Jo);
       
@@ -313,78 +292,148 @@ namespace bsplines {
       return omega;
     }
 
-    // \omega_dot_b_{w,b} (angular acceleration of the world frame as seen from the body frame, expressed in the body frame)
+    // {}_b\dot\omega_{wb}
+    // \omega_dot_w_{b,b} (angular acceleration of the body frame as seen from the world frame, expressed in the body frame)
     Eigen::Vector3d BSplinePose::angularAccelerationBodyFrame(double tk) const
     {
-    	Eigen::Vector3d omega;
-    	Eigen::VectorXd r = evalD(tk,0);
-    	Eigen::VectorXd v = evalD(tk,2);
-    	Eigen::Matrix3d S;
-    	Eigen::Matrix3d C_w_b = rotation_->parametersToRotationMatrix(r.tail<3>(), &S);
+    	Eigen::Vector3d p = evalD(tk,0).tail<3>();
+      Eigen::Vector3d v = evalD(tk,1).tail<3>();
+    	Eigen::Vector3d a = evalD(tk,2).tail<3>();
+    	Eigen::Matrix3d C_w_b = rotation_->parametersToRotationMatrix(p);
 
-    	// \omega = S(\bar \theta) \dot \theta
-    	omega = -C_w_b.transpose() * S * v.tail<3>();
-    	return omega;
+      Eigen::Matrix<double,3,6> Jo;
+      rotation_->angularVelocityAndJacobian(p,v,&Jo);
 
+      Eigen::Matrix<double,6,1> va;
+      va << v, a;
+
+      return -C_w_b.transpose() * (Jo * va);
     }
 
-    // \omega_dot_b_{w,b} (angular acceleration of the world frame as seen from the body frame, expressed in the body frame)
+    // \omega_dot_w_{b,b} (angular acceleration of the body frame as seen from the world frame, expressed in the body frame)
     Eigen::Vector3d BSplinePose::angularAccelerationBodyFrameAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const
     {
-    	Eigen::Vector3d omega;
-    	Eigen::Vector3d p;
-    	Eigen::Vector3d pdot;
-    	Eigen::MatrixXd Jp;
-    	Eigen::MatrixXd Jpdot;
-    	p = evalDAndJacobian(tk,0,&Jp,NULL).tail<3>();
-    	pdot = evalDAndJacobian(tk,2,&Jpdot,coefficientIndices).tail<3>();
+      Eigen::MatrixXd Jr;
+    	Eigen::Matrix3d C_b_w = inverseOrientationAndJacobian(tk,&Jr,NULL);
 
-    	Eigen::MatrixXd Jr;
-    	Eigen::Matrix3d C_w_b = inverseOrientationAndJacobian(tk,&Jr,NULL);
+      Eigen::Vector3d acce = angularAccelerationAndJacobian(tk, J, coefficientIndices);
+      acce = C_b_w * acce;
 
-    	// Rearrange the spline jacobian matrices. Now Jpdot is the
-    	// jacobian of p wrt the spline coefficients stacked on top
-    	// of the jacobian of pdot wrt the spline coefficients.
-    	Jpdot.block(0,0,3,Jpdot.cols()) = Jp.block(3,0,3,Jp.cols());
-
-    	Eigen::Matrix<double,3,6> Jo;
-    	omega = -C_w_b * rotation_->angularVelocityAndJacobian(p,pdot,&Jo);
-    	Jo = (-C_w_b * Jo).eval();
-    	if(J)
+      if(J)
     	{
-    		*J = Jo * Jpdot + sm::kinematics::crossMx(omega) * Jr;
+    		*J = C_b_w * (*J) + sm::kinematics::crossMx(acce) * Jr;
     	}
 
-    	return omega;
-
+      return acce;
     }
 
+    // {}_w\dot\omega_{wb}
+    // \omega_dot_w_{b,w} (angular acceleration of the body frame as seen from the world frame, expressed in the world frame)
+    Eigen::Vector3d BSplinePose::angularAcceleration(double tk) const
+    {
+    	Eigen::Vector3d p = evalD(tk,0).tail<3>();
+      Eigen::Vector3d v = evalD(tk,1).tail<3>();
+    	Eigen::Vector3d a = evalD(tk,2).tail<3>();
 
+      Eigen::Matrix<double,3,6> Jo;
+      rotation_->angularVelocityAndJacobian(p,v,&Jo);
+
+      Eigen::Matrix<double,6,1> va;
+      va << v, a;
+
+      return -(Jo * va);
+    }
+
+    // \todo Only support RotationVector by now
     // \omega_dot_w_{b,w} (angular acceleration of the body frame as seen from the world frame, expressed in the world frame)
     Eigen::Vector3d BSplinePose::angularAccelerationAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const
     {
+      Eigen::Vector3d p;
+      Eigen::Vector3d v;
+    	Eigen::Vector3d a;
+      Eigen::MatrixXd Jp;
+      Eigen::MatrixXd Jv;
+      Eigen::MatrixXd Ja;
+      p = evalDAndJacobian(tk,0,&Jp,NULL).tail<3>();
+      v = evalDAndJacobian(tk,1,&Jv,NULL).tail<3>();
+      a = evalDAndJacobian(tk,2,&Ja,coefficientIndices).tail<3>();
 
-    	Eigen::Vector3d omega;
-    	Eigen::Vector3d p;
-    	Eigen::Vector3d pdot;
-    	Eigen::MatrixXd Jp;
-    	Eigen::MatrixXd Jpdot;
-    	p = evalDAndJacobian(tk,0,&Jp,NULL).tail<3>();
-    	pdot = evalDAndJacobian(tk,2,&Jpdot,coefficientIndices).tail<3>();
+      Eigen::Matrix<double,3,6> Jo;
+      rotation_->angularVelocityAndJacobian(p,v,&Jo);
 
-    	// Rearrange the spline jacobian matrices. Now Jpdot is the
+      Eigen::Matrix<double,6,1> va;
+      va << v, a;
+
+      Eigen::Vector3d acce = -(Jo * va);
+
+      // Rearrange the spline jacobian matrices. Now Ja is the
     	// jacobian of p wrt the spline coefficients stacked on top
-    	// of the jacobian of pdot wrt the spline coefficients.
-    	Jpdot.block(0,0,3,Jpdot.cols()) = Jp.block(3,0,3,Jp.cols());
+    	// of the jacobian of a wrt the spline coefficients.
+    	Ja.block(0,0,3,Ja.cols()) = Jp.block(3,0,3,Jp.cols());
 
-    	Eigen::Matrix<double,3,6> Jo;
-    	omega = rotation_->angularVelocityAndJacobian(p,pdot,&Jo);
-    	if(J)
+      // Rearrange the spline jacobian matrices. Now Jv is the
+    	// jacobian of p wrt the spline coefficients stacked on top
+    	// of the jacobian of v wrt the spline coefficients.
+    	Jv.block(0,0,3,Jv.cols()) = Jp.block(3,0,3,Jp.cols());
+
+      rotation_->angularVelocityAndJacobian(p,a,&Jo);
+
+      // f(\theta, \dot\theta) = \frac{\partial Jr(\theta)\dot\theta}{\partial\theta}\dot\theta
+      // [ \frac{\partial f}{\partial\theta}  \frac{\partial f}{\partial\dot\theta} ]
+      Eigen::Matrix<double,3,6> Jpp;
+
+      double factor[5];
+      const double pv = p.dot(v);
+      const double v2 = v.squaredNorm();
+      const double p2 = p.squaredNorm();
+      if(p2 < 1e-14)
+      {
+        const double p4 = p2 * p2;
+        // Series[(x Sin[x] + 2 Cos[x] - 2) / x^4, {x, 0, 4}]
+        factor[0] = -1.0 / 12 + p2 / 180 - p4 / 6720;
+        // Series[(x - Sin[x]) / x^3, {x, 0, 4}]
+        factor[1] = 1.0 / 6 - p2 / 120 + p4 / 5040;
+        // Series[(3 Sin[x] - x Cos[x] - 2 x) / (x^5), {x, 0, 4}]
+        factor[2] = -1.0 / 60 + p2 / 1260 - p4 / 60480;
+        // Series[((x^2 - 8) Cos[x] - 5 x Sin[x] + 8) / x^6, {x, 0, 4}]
+        factor[3] = 1.0 / 90 - p2 / 1680 + p4 / 75600;
+        // Series[((x^2 - 15) Sin[x] + 7 x Cos[x] + 8 x) / x^7, {x, 0, 4}]
+        factor[4] = 1.0 / 630 - p2 / 15120 + p4 / 831600;
+      }
+      else
+      {
+        const double p1 = std::sqrt(p2);
+        const double p3 = p1 * p2;
+        const double p4 = p1 * p3;
+        const double p5 = p1 * p4;
+        const double p6 = p1 * p5;
+        const double p7 = p1 * p6;
+        const double cosp = std::cos(p1);
+        const double sinp = std::sin(p1);
+
+        factor[0] = (p1 * sinp + 2 * cosp - 2) / p4;
+        factor[1] = (p1 - sinp) / p3;
+        factor[2] = (3 * sinp - p1 * cosp - 2 * p1) / p5;
+        factor[3] = ((p2 - 8) * cosp - 5 * p1 * sinp + 8) / p6;
+        factor[4] = ((p2 - 15) * sinp + 7 * p1 * cosp + 8 * p1) / p7;
+      }
+
+      Jpp.leftCols<3>() = factor[0] * sm::kinematics::crossMx(v) * (pv * Eigen::Matrix3d::Identity() + p * v.transpose()) +
+                          factor[1] * (v2 * Eigen::Matrix3d::Identity() - v * v.transpose()) +
+                          factor[2] * (pv * pv * Eigen::Matrix3d::Identity() + 2 * pv * p * v.transpose() - 2 * pv * v * p.transpose() - p2 * v * v.transpose()) +
+                          factor[3] * pv * sm::kinematics::crossMx(v) * p * p.transpose() +
+                          factor[2] * (v2 * p * p.transpose() - pv * v * p.transpose()) +
+                          factor[4] * (pv * pv * p * p.transpose() - pv * p2 * v * p.transpose());
+      Jpp.rightCols<3>() = factor[0] * (sm::kinematics::crossMx(v) * p * p.transpose() - pv * sm::kinematics::crossMx(p)) +
+                           factor[1] * (2 * p * v.transpose() - v * p.transpose() - pv * Eigen::Matrix3d::Identity()) +
+                           factor[2] * (2 * pv * p * p.transpose() - pv * p2 * Eigen::Matrix3d::Identity() - p2 * v * p.transpose());
+
+      if(J)
     	{
-    		*J = Jo * Jpdot;
+    		*J = -Jpp * Jv - Jo * Ja;
     	}
 
-    	return omega;
+      return acce;
     }
 
     void BSplinePose::initPoseSpline(double t0, double t1, const Eigen::Matrix4d & T_n_t0, const Eigen::Matrix4d & T_n_t1)
