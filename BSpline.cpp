@@ -1381,7 +1381,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
       SM_ASSERT_GE_LT(Exception, segmentIndex, 0, (int)basisMatrices_.size(), "Out of range");
       SM_ASSERT_GE_LT(Exception, columnIndex, 0, splineOrder_, "Out of range");
       int D = coefficients_.rows();
-      Eigen::MatrixXd B = Eigen::MatrixXd::Zero(splineOrder_*D,D);
+      Eigen::MatrixXd B = Eigen::MatrixXd::Zero(splineOrder_*D,D);  // = I_D \otimes B_j
       for(int i = 0; i < D; i++)
 	{
 	  B.block(i*splineOrder_,i,splineOrder_,1) = basisMatrices_[segmentIndex].col(columnIndex);
@@ -1393,7 +1393,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
     {
       SM_ASSERT_GE_LT(Exception, segmentIndex, 0, (int)basisMatrices_.size(), "Out of range");
       int D = coefficients_.rows();      
-      Eigen::MatrixXd M = Eigen::MatrixXd::Zero(splineOrder_*D,splineOrder_*D);
+      Eigen::MatrixXd M = Eigen::MatrixXd::Zero(splineOrder_*D,splineOrder_*D); // [ I_D \otimes B_1 , I_D \otimes B_2 , ...  ]
       
       for(int j = 0; j < splineOrder_; j++)
 	{
