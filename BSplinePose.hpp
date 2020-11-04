@@ -100,6 +100,9 @@ namespace bsplines {
       
       Eigen::Matrix4d curveValueToTransformationAndJacobian( const Eigen::VectorXd & c, Eigen::MatrixXd * J ) const;
 
+      static void smoothRotationVector(const Eigen::Vector3d& near, Eigen::Vector3d& val);
+      static void smoothCurveValue(const Eigen::VectorXd& near, Eigen::VectorXd& val);
+
     private:      
               sm::kinematics::RotationalKinematics::Ptr rotation_;
     };

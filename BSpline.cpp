@@ -739,10 +739,11 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
     
     void BSpline::removeCurveSegment()
     {
-      if(knots_.size() > 0 && coefficients_.cols() > 0)
+      if(knots_.size() > 0 && coefficients_.cols() > 0 && basisMatrices_.size() > 0)
 	{
 	  knots_.erase(knots_.begin());
 	  coefficients_ = coefficients_.block(0,1,coefficients_.rows(),coefficients_.cols() - 1).eval();
+	  basisMatrices_.erase(basisMatrices_.begin());
 	}
     }
 

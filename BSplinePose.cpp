@@ -461,14 +461,16 @@ namespace bsplines {
     void BSplinePose::addPoseSegment(double tk, const Eigen::Matrix4d & T_n_tk)
     {
       Eigen::VectorXd vk = transformationToCurveValue(T_n_tk);
-      
+      Eigen::VectorXd near = eval(t_max());
+      smoothCurveValue(near, vk);
       addCurveSegment(tk, vk);
     }
 
     void BSplinePose::addPoseSegment2(double tk, const Eigen::Matrix4d & T_n_tk, double lambda)
     {
       Eigen::VectorXd vk = transformationToCurveValue(T_n_tk);
-      
+      Eigen::VectorXd near = eval(t_max());
+      smoothCurveValue(near, vk);
       addCurveSegment2(tk, vk, lambda);
     }
 
@@ -535,5 +537,30 @@ namespace bsplines {
     RotationalKinematics::Ptr BSplinePose::rotation() const
     {
       return rotation_;
+    }
+
+    void BSplinePose::smoothRotationVector(const Eigen::Vector3d& near, Eigen::Vector3d& val)
+    {
+      const double angle = val.norm();
+      const Eigen::Vector3d axis = val / angle;
+      double best_dist = 1e12;
+      for(int s = -3; s < 4; ++s)
+      {
+        Eigen::Vector3d aa = axis * (angle + M_PI * 2.0 * s);
+        double dist = (aa - near).norm();
+        if (dist < best_dist)
+        {
+          val = aa;
+          best_dist = dist;
+        }
+      }
+    }
+
+    void BSplinePose::smoothCurveValue(const Eigen::VectorXd& near, Eigen::VectorXd& val)
+    {
+      Eigen::Vector3d near_rv = near.tail<3>();
+      Eigen::Vector3d val_rv = val.tail<3>();
+      smoothRotationVector(near_rv, val_rv);
+      val.tail<3>() = val_rv;
     }
   } // namespace bsplines
