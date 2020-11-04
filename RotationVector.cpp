@@ -6,7 +6,8 @@ namespace sm { namespace kinematics {
         {
 
         }
-    
+
+        // exp(-\theta)    
         Eigen::Matrix3d RotationVector::parametersToRotationMatrix(const Eigen::Vector3d & parameters, Eigen::Matrix3d * S) const
         {
             Eigen::Matrix3d C;
@@ -54,6 +55,7 @@ namespace sm { namespace kinematics {
             return C;
         }
 
+        // -log(R)
         Eigen::Vector3d RotationVector::rotationMatrixToParameters(const Eigen::Matrix3d & C) const
         {
             Eigen::Vector3d p;
@@ -79,6 +81,7 @@ namespace sm { namespace kinematics {
             return p;
         }
 
+        // Jr(\theta)
         Eigen::Matrix3d RotationVector::parametersToSMatrix(const Eigen::Vector3d & parameters) const
         {
             Eigen::Matrix3d S;
@@ -116,14 +119,13 @@ namespace sm { namespace kinematics {
       
             if(Jacobian)
             {
-                *Jacobian = Eigen::Matrix<double,3,6>::Zero();
+                Eigen::Matrix<double,3,6> & J = *Jacobian; // = [ d(Jr(\theta)\dot{\theta})/d\theta  Jr(\theta) ]
+                J.rightCols<3>() = S;
+#if 0
 
-                //Jacobian->block(0,0,3,3) = Eigen::Matrix3d::Zero();
-                Jacobian->block(0,3,3,3) = S;
-    
+#else
                 // LAZY
                 // \todo...redo when there is time and not so lazy.
-                Eigen::Matrix<double,3,6> & J = *Jacobian;
                 double t1 = p[0];
                 double t2 = p[1];
                 double t3 = p[2];
@@ -162,10 +164,9 @@ namespace sm { namespace kinematics {
                 double t34 = dt2*t1*t10*t14*t3*4.0;
                 double t35 = dt1*t1*t10*t12*t7;
                 double t36 = dt2*t10*t12*t2*t7;
-                double t0  = t15*(t18+t19+t20+t21+t28+t29+t31+t33+t34+t35-dt1*t1*t11*t6*3.0-dt2*t10*t2*t5*2.0-dt1*t1*t11*t7*3.0-dt3*t10*t3*t5*2.0-dt2*t11*t2*t8-dt3*t11*t3*t8-dt3*t1*t10*t14*t2*4.0-dt2*t10*t12*t2*t5-dt3*t10*t12*t3*t5-dt3*t1*t11*t2*t8);
 
 
-                J(0,0) = t0;
+                J(0,0) = t15*(t18+t19+t20+t21+t28+t29+t31+t33+t34+t35-dt1*t1*t11*t6*3.0-dt2*t10*t2*t5*2.0-dt1*t1*t11*t7*3.0-dt3*t10*t3*t5*2.0-dt2*t11*t2*t8-dt3*t11*t3*t8-dt3*t1*t10*t14*t2*4.0-dt2*t10*t12*t2*t5-dt3*t10*t12*t3*t5-dt3*t1*t11*t2*t8);
                 J(0,1) = t15*(t16+t17+dt2*t1*t9-dt1*t2*t9*2.0-dt2*t1*t10*t6*2.0+dt2*t1*t11*t6*3.0-dt3*t10*t14*t6*4.0+dt1*t10*t2*t6*2.0-dt1*t11*t2*t6*3.0+dt1*t10*t2*t7*2.0-dt1*t11*t2*t7*3.0-dt2*t1*t11*t8+dt1*t11*t2*t8*2.0-dt3*t11*t6*t8-dt3*t1*t10*t2*t3*2.0+dt2*t10*t14*t2*t3*4.0-dt2*t1*t10*t12*t6+dt1*t10*t12*t2*t6+dt1*t10*t12*t2*t7+dt2*t11*t2*t3*t8-dt3*t1*t10*t12*t2*t3);
                 J(0,2) = -t15*(t22+t23+t24-dt3*t1*t9+dt1*t3*t9*2.0+dt3*t1*t10*t7*2.0-dt3*t1*t11*t7*3.0-dt2*t10*t14*t7*4.0-dt1*t10*t3*t6*2.0+dt1*t11*t3*t6*3.0+dt3*t1*t11*t8-dt1*t10*t3*t7*2.0+dt1*t11*t3*t7*3.0-dt1*t11*t3*t8*2.0-dt2*t11*t7*t8-dt2*t1*t11*t2*t3*3.0+dt3*t10*t14*t2*t3*4.0+dt3*t1*t10*t12*t7-dt1*t10*t12*t3*t6-dt1*t10*t12*t3*t7+dt3*t11*t2*t3*t8);
                 J(1,0) = -t15*(t16-t17+dt2*t1*t9*2.0-dt1*t2*t9-dt2*t1*t10*t5*2.0+dt2*t1*t11*t5*3.0-dt3*t10*t14*t5*4.0+dt1*t10*t2*t5*2.0-dt1*t11*t2*t5*3.0-dt2*t1*t10*t7*2.0+dt2*t1*t11*t7*3.0-dt2*t1*t11*t8*2.0+dt1*t11*t2*t8-dt3*t11*t5*t8+dt1*t1*t10*t14*t3*4.0+dt3*t1*t10*t2*t3*2.0-dt2*t1*t10*t12*t5+dt1*t10*t12*t2*t5-dt2*t1*t10*t12*t7+dt1*t1*t11*t3*t8+dt3*t1*t10*t12*t2*t3);
@@ -174,7 +175,7 @@ namespace sm { namespace kinematics {
                 J(2,0) = t15*(t22-t23-t24-dt3*t1*t9*2.0+dt1*t3*t9+dt3*t1*t10*t5*2.0-dt3*t1*t11*t5*3.0-dt2*t10*t14*t5*4.0+dt3*t1*t10*t6*2.0-dt3*t1*t11*t6*3.0-dt1*t10*t3*t5*2.0+dt1*t11*t3*t5*3.0+dt3*t1*t11*t8*2.0-dt1*t11*t3*t8-dt2*t11*t5*t8+dt1*t1*t10*t14*t2*4.0+dt2*t1*t11*t2*t3*3.0+dt3*t1*t10*t12*t5+dt3*t1*t10*t12*t6-dt1*t10*t12*t3*t5+dt1*t1*t11*t2*t8);
                 J(2,1) = -t15*(t25-t26+dt3*t2*t9*2.0-dt2*t3*t9-dt3*t10*t2*t5*2.0+dt3*t11*t2*t5*3.0-dt1*t10*t14*t6*4.0-dt3*t10*t2*t6*2.0+dt3*t11*t2*t6*3.0+dt2*t10*t3*t6*2.0-dt2*t11*t3*t6*3.0-dt3*t11*t2*t8*2.0+dt2*t11*t3*t8-dt1*t11*t6*t8+dt2*t1*t10*t14*t2*4.0+dt1*t1*t10*t2*t3*2.0-dt3*t10*t12*t2*t5-dt3*t10*t12*t2*t6+dt2*t10*t12*t3*t6+dt2*t1*t11*t2*t8+dt1*t1*t10*t12*t2*t3);
                 J(2,2) = t15*(t27+t28-t29-t30-t31-t32-t33-t34-t35-t36+dt1*t1*t11*t7*3.0+dt3*t10*t3*t5*2.0-dt1*t1*t11*t8+dt2*t11*t2*t7*3.0+dt3*t10*t3*t6*2.0-dt2*t11*t2*t8+dt1*t10*t14*t2*t3*4.0+dt3*t10*t12*t3*t5+dt3*t10*t12*t3*t6+dt1*t11*t2*t3*t8);
-
+#endif
 
             }
 

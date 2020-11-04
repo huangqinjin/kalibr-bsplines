@@ -7,6 +7,13 @@
 namespace bsplines {
   using namespace sm::kinematics;
 
+    // given T, T'\in\mathrm{SE}(3), define Exp_{T}(h), h\in\mathbb{R}^6 , Log_{T}(T') 
+    // [p,\theta]\in\mathbb{R}^6 , \mathrm{SE}(3) \ni T = Exp[p, \theta] = [exp(-\theta) p]
+    //                                                                     [      0      1] 
+    // T = [R t] \in\mathrm{SE}(3), Log T = [t  -log(R)]
+    //     [0 1]
+    // T \oplus [a, b] = Exp_{T}([a, b]) = Exp[a, b] * T
+    // T1 \ominus T2 = Log_{T2}(T1) = Log(T1 * T2^{-1})
     BSplinePose::BSplinePose(int splineOrder, const RotationalKinematics::Ptr & rotationalKinematics) 
       : BSpline(splineOrder), rotation_(rotationalKinematics)
     {
@@ -23,23 +30,30 @@ namespace bsplines {
       return curveValueToTransformation(eval(tk));
     }
 
+    // T: transformation  p: axis angle  C: spline control points
+    // dT/dC = dT/dp * dp/dC
     Eigen::Matrix4d BSplinePose::transformationAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const
     {
-      Eigen::MatrixXd JS;
+      Eigen::MatrixXd JS;  // dp/dC
       Eigen::VectorXd p;
       p = evalDAndJacobian(tk,0,&JS, coefficientIndices);
       
-      Eigen::MatrixXd JT;
+      Eigen::MatrixXd JT;  // dT/dp
       Eigen::Matrix4d T = curveValueToTransformationAndJacobian( p, &JT );      
       
       if(J)
-	{
-	  *J = JT * JS;
-	}
+      {
+        *J = JT * JS;
+      }
 
       return T;
     }
 
+    // Log_{O(\theta)}O(\theta + \delta) = J\delta
+    // => J\delta = Log(O(\theta + \delta) * O(\theta)^{-1})
+    //            = Log(exp(-(\theta + \delta)) * exp(\theta))
+    //            = Log(exp(-Jr(\theta)\delta))
+    //            = Jr(\theta)\delta
     Eigen::Matrix3d BSplinePose::orientationAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const
     {
       Eigen::Matrix3d C;
@@ -53,14 +67,20 @@ namespace bsplines {
       Eigen::MatrixXd JO = Eigen::MatrixXd::Zero(3,6);
       JO.block(0,3,3,3) = S;
       if(J)
-	{
-	  *J = JO * JS;
-	}
+      {
+        *J = JO * JS;
+      }
 
       return C;
 
     }
 
+    // Log_{IO(\theta)}IO(\theta + \delta) = J\delta
+    // => J\delta = Log(IO(\theta + \delta) * IO(\theta)^{-1})
+    //            = Log(exp(\theta + \delta) * exp(-\theta))
+    //            = Log(Jl(\theta)\delta)
+    //            = -Jl(\theta)\delta
+    //            = -exp(\theta)Jr(\theta)\delta
     Eigen::Matrix3d BSplinePose::inverseOrientationAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const
     {
       Eigen::Matrix3d C;
@@ -74,9 +94,9 @@ namespace bsplines {
       Eigen::MatrixXd JO = Eigen::MatrixXd::Zero(3,6);
       JO.block(0,3,3,3) = S;
       if(J)
-	{
-	  *J = -C * JO * JS;
-	}
+      {
+        *J = -C * JO * JS;
+      }
 
       return C;
 
@@ -98,15 +118,15 @@ namespace bsplines {
       T.topRightCorner<3,1>() = (-T.topLeftCorner<3,3>() * T.topRightCorner<3,1>()).eval();      
 
       if(J)
-	{
-	  // The "box times" is the linearized transformation way of inverting the jacobian.
-	  *J = -sm::kinematics::boxTimes(T) * JT * JS;
-	}
+      {
+        // The "box times" is the linearized transformation way of inverting the jacobian.
+        *J = -sm::kinematics::boxTimes(T) * JT * JS;
+      }
 
       if(coefficientIndices)
-	{
-	  *coefficientIndices = localCoefficientVectorIndices(tk);
-	}
+      {
+        *coefficientIndices = localCoefficientVectorIndices(tk);
+      }
       
       return T;
     }
@@ -120,7 +140,8 @@ namespace bsplines {
     }
 
 
-
+    // d(Tv)/dC = d(Tv)/dT * dT/dp * dp/dC
+    // d(Tv)/dT s.t. Exp_{T}(h)v - Tv = d(Tv)/dT * h
     Eigen::Vector4d BSplinePose::transformVectorAndJacobian(double tk, const Eigen::Vector4d & v_tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const
     {
       Eigen::MatrixXd JT;
@@ -128,9 +149,9 @@ namespace bsplines {
       Eigen::Vector4d v_n = T_n_vk * v_tk;
       
       if(J)
-	{
-	  *J = sm::kinematics::boxMinus(v_n) * JT;
-	}
+      {
+        *J = sm::kinematics::boxMinus(v_n) * JT;
+      }
 
       return v_n;
     }
@@ -184,13 +205,13 @@ namespace bsplines {
       
       Eigen::Vector3d a = evalDAndJacobian(tk,2,J,coefficientIndices).head<3>();
       if(J)
-	{
-	  J->conservativeResize(3,J->cols());
-	}
+      {
+        J->conservativeResize(3,J->cols());
+      }
       return a;
     }
     
-
+    // {}_w\omege_{wb}
     // \omega_w_{b,w} (angular velocity of the body frame as seen from the world frame, expressed in the world frame)
     Eigen::Vector3d BSplinePose::angularVelocity(double tk) const
     {
@@ -198,12 +219,12 @@ namespace bsplines {
       Eigen::VectorXd r = evalD(tk,0);
       Eigen::VectorXd v = evalD(tk,1);
 
-      // \omega = S(\bar \theta) \dot \theta
       omega = -rotation_->parametersToSMatrix(r.tail<3>()) * v.tail<3>();
       return omega;
     }
 
-    // \omega_b_{w,b} (angular velocity of the world frame as seen from the body frame, expressed in the body frame)
+    // {}_b\omege_{wb}
+    // \omega_w_{b,b} (angular velocity of the body frame as seen from the world frame, expressed in the body frame)
     Eigen::Vector3d BSplinePose::angularVelocityBodyFrame(double tk) const
     {
       Eigen::Vector3d omega;
@@ -212,13 +233,12 @@ namespace bsplines {
       Eigen::Matrix3d S;
       Eigen::Matrix3d C_w_b = rotation_->parametersToRotationMatrix(r.tail<3>(), &S);
 
-      // \omega = S(\bar \theta) \dot \theta
       omega = -C_w_b.transpose() * S * v.tail<3>();
       return omega;      
 
     }
 
-    // \omega_b_{w,b} (angular velocity of the world frame as seen from the body frame, expressed in the body frame)
+    // \omega_w_{b,b} (angular velocity of the body frame as seen from the world frame, expressed in the body frame)
     Eigen::Vector3d BSplinePose::angularVelocityBodyFrameAndJacobian(double tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const
     {
       Eigen::Vector3d omega;
@@ -230,8 +250,10 @@ namespace bsplines {
       pdot = evalDAndJacobian(tk,1,&Jpdot,coefficientIndices).tail<3>();
 
       Eigen::MatrixXd Jr;
-      Eigen::Matrix3d C_w_b = inverseOrientationAndJacobian(tk,&Jr,NULL);
+      Eigen::Matrix3d C_b_w = inverseOrientationAndJacobian(tk,&Jr,NULL);
       
+      // Jpdot = [    d\theta/dC    ]
+      //         [ d\dot{\theta}/dC ]
       // Rearrange the spline jacobian matrices. Now Jpdot is the 
       // jacobian of p wrt the spline coefficients stacked on top
       // of the jacobian of pdot wrt the spline coefficients.
@@ -240,13 +262,20 @@ namespace bsplines {
       //std::cout << "Jpdot\n" << Jpdot << std::endl;
 
       Eigen::Matrix<double,3,6> Jo;
-      omega = -C_w_b * rotation_->angularVelocityAndJacobian(p,pdot,&Jo);
-      Jo = (-C_w_b * Jo).eval();
+      omega = -C_b_w * rotation_->angularVelocityAndJacobian(p,pdot,&Jo);
+      Jo = (-C_b_w * Jo).eval();
       //std::cout << "Jo:\n" << Jo << std::endl;
+      // \omega = -R * Jr(\theta) * \dot{\theta}
+      // R, \theta, \dot{\theta} are independent, then 
+      //    d\omega/dC = d\omega/dR * dR/dC + d\omega/d\theta * d\theta/dC + d\omega/d\dot{\theta} * d\dot{\theta}/dC
+      // d\omega/dR = (\omega)^\wedge
+      //  d\omega/d\theta * d\theta/dC + d\omega/d\dot{\theta} * d\dot{\theta}/dC
+      // = -R * [d(Jr(\theta)\dot{\theta})/d\theta   Jr(\theta)] * [    d\theta/dC    ]
+      //                                                           [ d\dot{\theta}/dC ]
       if(J)
-	{
-	  *J = Jo * Jpdot + sm::kinematics::crossMx(omega) * Jr;
-	}
+      {
+        *J = Jo * Jpdot + sm::kinematics::crossMx(omega) * Jr;
+      }
 
       return omega;
 
@@ -273,13 +302,13 @@ namespace bsplines {
       //std::cout << "Jpdot\n" << Jpdot << std::endl;
 
       Eigen::Matrix<double,3,6> Jo;
-      omega = rotation_->angularVelocityAndJacobian(p,pdot,&Jo);
+      omega = -rotation_->angularVelocityAndJacobian(p,pdot,&Jo);
       
       //std::cout << "Jo:\n" << Jo << std::endl;
       if(J)
-	{
-	  *J = Jo * Jpdot;
-	}
+      {
+        *J = -Jo * Jpdot;
+      }
 
       return omega;
     }
@@ -391,6 +420,7 @@ namespace bsplines {
       return T;
     }
 
+    // dT/dp s.t. T(p + \delta) = Exp(dT/dp \delta)T(p)
     Eigen::Matrix4d BSplinePose::curveValueToTransformationAndJacobian( const Eigen::VectorXd & p, Eigen::MatrixXd * J ) const
     {
       SM_ASSERT_EQ_DBG(Exception, p.size(), 6, "The curve value is an unexpected size!");
@@ -400,12 +430,11 @@ namespace bsplines {
       T.topRightCorner<3,1>() = p.head<3>();
 
       if(J)
-	{
-	  *J = Eigen::MatrixXd::Identity(6,6);
-	  J->topRightCorner<3,3>() = -crossMx(p.head<3>()) * S;
-	  J->bottomRightCorner<3,3>() = S;
-          
-	}
+      {    
+        *J = Eigen::MatrixXd::Identity(6,6);
+        J->topRightCorner<3,3>() = -crossMx(p.head<3>()) * S;
+        J->bottomRightCorner<3,3>() = S;
+      }
       
       return T;
 
