@@ -1,7 +1,5 @@
 #include "BSplinePose.hpp"
 #include "assert_macros.hpp"
-// boost::tie
-#include <boost/tuple/tuple.hpp>
 #include "transformations.hpp"
 
 namespace bsplines {

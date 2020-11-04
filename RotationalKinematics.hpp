@@ -2,7 +2,7 @@
 #define SM_ROTATIONAL_KINEMATICS_HPP
 
 #include <Eigen/Core>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "assert_macros.hpp"
 #include "rotations.hpp"
 
@@ -12,8 +12,8 @@ namespace sm { namespace kinematics {
     public:
       SM_DEFINE_EXCEPTION(Exception,std::runtime_error);
       virtual ~RotationalKinematics();
-      typedef ::boost::shared_ptr<RotationalKinematics> Ptr;
-      typedef ::boost::shared_ptr<const RotationalKinematics> ConstPtr;
+      typedef ::std::shared_ptr<RotationalKinematics> Ptr;
+      typedef ::std::shared_ptr<const RotationalKinematics> ConstPtr;
 
       // Three functions that must be implemented.
       virtual Eigen::Matrix3d parametersToRotationMatrix(const Eigen::Vector3d & parameters, Eigen::Matrix3d * S = NULL) const = 0;

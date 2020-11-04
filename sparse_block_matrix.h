@@ -25,7 +25,6 @@
 #include <Eigen/Core>
 
 #include "assert_macros.hpp"
-#include <boost/algorithm/minmax.hpp>
 
 namespace sparse_block_matrix {
   using namespace Eigen;

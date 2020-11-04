@@ -6,8 +6,8 @@
 #include <Eigen/LU>
 #include <Eigen/QR>
 //#include <asrl/string_routines.hpp>
-// boost::tie()
-#include <boost/tuple/tuple.hpp>
+// std::tie()
+#include <tuple>
 #include <Eigen/SVD> 
 
 namespace bsplines {
@@ -657,7 +657,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
       // Retool the knot vector.
       double du;
       int km1;
-      boost::tie(du,km1) = computeTIndex(interval_km1.first);
+      std::tie(du,km1) = computeTIndex(interval_km1.first);
       
       // leave knots km1 and k alone but retool the other knots.
       double dt = t - knots_[km1 + 1];
@@ -683,7 +683,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
       
       // Get the time interval of the new time segment.
       double t_0, t_1;
-      boost::tie(t_0,t_1) = timeInterval(NT);
+      std::tie(t_0,t_1) = timeInterval(NT);
 
       // what is the coefficient dimension?
       int D = coefficients_.rows();
@@ -1183,7 +1183,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
       // Retool the knot vector.
       double du;
       int km1;
-      boost::tie(du,km1) = computeTIndex(interval_km1.first);
+      std::tie(du,km1) = computeTIndex(interval_km1.first);
       
       // leave knots km1 and k alone but retool the other knots.
       double dt = t - knots_[km1 + 1];
@@ -1209,7 +1209,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
       
       // Get the time interval of the new time segment.
       double t_0, t_1;
-      boost::tie(t_0,t_1) = timeInterval(NT);
+      std::tie(t_0,t_1) = timeInterval(NT);
 
       // what is the coefficient dimension?
       int D = coefficients_.rows();
@@ -1294,7 +1294,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
 	}
 
       double t_0,t_1;
-      boost::tie(t_0,t_1) = timeInterval(segmentIndex);
+      std::tie(t_0,t_1) = timeInterval(segmentIndex);
 
       V *= t_1 - t_0;
 
@@ -1485,7 +1485,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
     {
       SM_ASSERT_GE_LT(Exception, segmentIndex, 0, (int)basisMatrices_.size(), "Out of range");
       double t_0,t_1;
-      boost::tie(t_0,t_1) = timeInterval(segmentIndex);
+      std::tie(t_0,t_1) = timeInterval(segmentIndex);
       double dt = t_1 - t_0;
       
       double recip_dt = 0.0;
