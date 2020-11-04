@@ -1,5 +1,5 @@
 #include "sparse_block_matrix.h"
-#include "linear_solver_cholmod.h"
+#include "linear_solver_eigen.h"
 #include "BSpline.hpp"
 #include "assert_macros.hpp"
 #include <Eigen/Cholesky>
@@ -940,7 +940,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
     	Q.add(AtAp);
         
     	// solve:
-    	sparse_block_matrix::LinearSolverCholmod<Eigen::MatrixXd> solver;
+    	sparse_block_matrix::LinearSolverEigen<Eigen::MatrixXd> solver;
     	solver.init();
         
     	Eigen::VectorXd c(AtAp->rows());
@@ -1062,7 +1062,7 @@ Eigen::VectorXi BSpline::segmentVvCoefficientVectorIndices(int segmentIdx) const
         Q.add(AtAp);
         
         // solve:
-        sparse_block_matrix::LinearSolverCholmod<Eigen::MatrixXd> solver;
+        sparse_block_matrix::LinearSolverEigen<Eigen::MatrixXd> solver;
         solver.init();
         
         Eigen::VectorXd c(AtAp->rows());
