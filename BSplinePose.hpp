@@ -55,6 +55,7 @@ namespace bsplines {
 
 
       Eigen::Vector4d transformVectorAndJacobian(double tk, const Eigen::Vector4d & v, Eigen::MatrixXd * J = NULL, Eigen::VectorXi * coefficientIndices = NULL) const;      
+      Eigen::Vector4d inverseTransformVectorAndJacobian(double tk, const Eigen::Vector4d & v, Eigen::MatrixXd * J = NULL, Eigen::VectorXi * coefficientIndices = NULL) const;
       Eigen::Vector3d position(double tk) const;
 
       Eigen::Matrix3d orientation(double tk) const;

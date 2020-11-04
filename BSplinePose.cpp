@@ -156,6 +156,19 @@ namespace bsplines {
       return v_n;
     }
 
+    Eigen::Vector4d BSplinePose::inverseTransformVectorAndJacobian(double tk, const Eigen::Vector4d & v_tk, Eigen::MatrixXd * J, Eigen::VectorXi * coefficientIndices) const
+    {
+      Eigen::MatrixXd JT;
+      Eigen::Matrix4d T_n_vk = inverseTransformationAndJacobian(tk, &JT, coefficientIndices);
+      Eigen::Vector4d v_n = T_n_vk * v_tk;
+
+      if(J)
+      {
+        *J = sm::kinematics::boxMinus(v_n) * JT;
+      }
+
+      return v_n;
+    }
       
     Eigen::Vector3d BSplinePose::position(double tk) const
     {
