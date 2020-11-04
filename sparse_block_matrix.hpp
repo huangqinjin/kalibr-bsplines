@@ -551,12 +551,12 @@ SparseBlockMatrix<MatrixType>* SparseBlockMatrix<MatrixType>::slice(int rmin, in
   for (int i = 1; i < n; i++) {
     colIdx[i] = colIdx[i - 1] + colsOfBlock(cmin + i);
   }
-  typename SparseBlockMatrix<MatrixType>::SparseBlockMatrix* s = new SparseBlockMatrix(rowIdx, colIdx, m, n, true);
+  SparseBlockMatrix* s = new SparseBlockMatrix(rowIdx, colIdx, m, n, true);
   for (int i = 0; i < n; i++) {
     int mc = cmin + i;
-    for (typename SparseBlockMatrix<MatrixType>::IntBlockMap::const_iterator it = _blockCols[mc].begin(); it != _blockCols[mc].end(); it++) {
+    for (typename IntBlockMap::const_iterator it = _blockCols[mc].begin(); it != _blockCols[mc].end(); it++) {
       if (it->first >= rmin && it->first < rmax) {
-        typename SparseBlockMatrix<MatrixType>::SparseMatrixBlock* b = alloc ? new typename SparseBlockMatrix<MatrixType>::SparseMatrixBlock(*(it->second)) : it->second;
+        SparseMatrixBlock* b = alloc ? new SparseMatrixBlock(*(it->second)) : it->second;
         s->_blockCols[i].insert(std::make_pair(it->first - rmin, b));
       }
     }
