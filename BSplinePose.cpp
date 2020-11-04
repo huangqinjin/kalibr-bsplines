@@ -1,8 +1,8 @@
-#include <bsplines/BSplinePose.hpp>
-#include <sm/assert_macros.hpp>
+#include "BSplinePose.hpp"
+#include "assert_macros.hpp"
 // boost::tie
 #include <boost/tuple/tuple.hpp>
-#include <sm/kinematics/transformations.hpp>
+#include "transformations.hpp"
 
 namespace bsplines {
   using namespace sm::kinematics;

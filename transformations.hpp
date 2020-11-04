@@ -14,7 +14,7 @@
 
 
 
-#include <sm/assert_macros.hpp>
+#include "assert_macros.hpp"
 #include "rotations.hpp"
 
 namespace sm { namespace kinematics {

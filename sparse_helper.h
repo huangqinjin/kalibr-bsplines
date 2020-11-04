@@ -120,7 +120,7 @@ namespace {
 
 } // end namespace
 
-#include "implementation/sparse_helper.h"
+#include "sparse_helper.hpp"
 
 #endif
 

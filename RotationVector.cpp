@@ -1,4 +1,4 @@
-#include <sm/kinematics/RotationVector.hpp>
+#include "RotationVector.hpp"
 
 namespace sm { namespace kinematics {
 

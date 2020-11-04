@@ -16,7 +16,7 @@
 
 
 #include "BSpline.hpp"
-#include <sm/kinematics/RotationalKinematics.hpp>
+#include "RotationalKinematics.hpp"
 
 namespace bsplines {
 

@@ -25,7 +25,7 @@
 #include <Eigen/Core>
 
 #include "matrix_structure.h"
-#include <sm/assert_macros.hpp>
+#include "assert_macros.hpp"
 #include <boost/algorithm/minmax.hpp>
 #include "sparse_helper.h"
 
@@ -263,6 +263,6 @@ std::ostream& operator << (std::ostream&, const SparseBlockMatrix<MatrixType>& m
 
 } //end namespace
 
-#include "implementation/sparse_block_matrix.hpp"
+#include "sparse_block_matrix.hpp"
 
 #endif

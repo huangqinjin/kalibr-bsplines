@@ -3,7 +3,7 @@
 
 #include <Eigen/Core>
 #include <boost/shared_ptr.hpp>
-#include <sm/assert_macros.hpp>
+#include "assert_macros.hpp"
 #include "rotations.hpp"
 
 namespace sm { namespace kinematics {

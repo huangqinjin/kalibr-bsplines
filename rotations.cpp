@@ -1,5 +1,5 @@
-#include <sm/kinematics/rotations.hpp>
-#include <sm/assert_macros.hpp>
+#include "rotations.hpp"
+#include "assert_macros.hpp"
 #include <boost/math/special_functions/fpclassify.hpp>
 #include <boost/math/special_functions/round.hpp>
 

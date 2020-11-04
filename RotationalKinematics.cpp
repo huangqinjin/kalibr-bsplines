@@ -1,4 +1,4 @@
-#include <sm/kinematics/RotationalKinematics.hpp>
+#include "RotationalKinematics.hpp"
 
 namespace sm { namespace kinematics {
 

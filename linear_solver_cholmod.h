@@ -17,9 +17,9 @@
 #ifndef SBM_LINEAR_SOLVER_CHOLMOD
 #define SBM_LINEAR_SOLVER_CHOLMOD
 
-#include <sparse_block_matrix/linear_solver.h>
-#include <sparse_block_matrix/marginal_covariance_cholesky.h>
-#include <sparse_block_matrix/sparse_helper.h>
+#include "linear_solver.h"
+#include "marginal_covariance_cholesky.h"
+#include "sparse_helper.h"
 #include <cholmod.h>
 
 namespace sparse_block_matrix {

@@ -1,7 +1,7 @@
-#include <sparse_block_matrix/sparse_block_matrix.h>
-#include <sparse_block_matrix/linear_solver_cholmod.h>
-#include <bsplines/BSpline.hpp>
-#include <sm/assert_macros.hpp>
+#include "sparse_block_matrix.h"
+#include "linear_solver_cholmod.h"
+#include "BSpline.hpp"
+#include "assert_macros.hpp"
 #include <Eigen/Cholesky>
 #include <Eigen/LU>
 #include <Eigen/QR>

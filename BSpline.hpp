@@ -12,10 +12,10 @@
 
 #ifndef _BSPLINE_HPP
 #define _BSPLINE_HPP
-#include <sparse_block_matrix/sparse_block_matrix.h>
+#include "sparse_block_matrix.h"
 #include <vector>
 #include <Eigen/Core>
-#include <sm/assert_macros.hpp>
+#include "assert_macros.hpp"
 
 namespace bsplines {
 	class BiVector;

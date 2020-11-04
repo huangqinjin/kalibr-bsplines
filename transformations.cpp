@@ -1,4 +1,4 @@
-#include <sm/kinematics/transformations.hpp>
+#include "transformations.hpp"
 #include <Eigen/Geometry>
 
 namespace sm { namespace kinematics {
